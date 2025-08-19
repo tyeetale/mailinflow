@@ -1,0 +1,79 @@
+# Infiscal Configuration Template for mailinflow
+# 
+# This file shows the expected API endpoints and data structure for Infiscal integration
+# with the mailinflow email triage system.
+
+# Infiscal Server Configuration
+INFISCAL_URL="https://your-infiscal-server.com"
+INFISCAL_TOKEN="your-authentication-token"
+
+# Expected API Endpoints
+
+## Health Check
+GET /health
+# Should return 200 OK if Infiscal is available
+
+## Email Accounts
+GET /api/email-accounts
+# Should return array of email account configurations:
+[
+  {
+    "name": "Primary",
+    "email_user": "user@example.com",
+    "email_pass": "app-password",
+    "imap_server": "imap.gmail.com",
+    "imap_port": 993
+  },
+  {
+    "name": "Work",
+    "email_user": "work@company.com",
+    "email_pass": "work-app-password",
+    "imap_server": "imap.company.com",
+    "imap_port": 993
+  }
+]
+
+## System Configuration
+GET /api/system-config
+# Should return system-wide configuration:
+{
+  "backup_enabled": true,
+  "backup_path": "./email_backups",
+  "unsubscribe_enabled": true,
+  "unsubscribe_aggressive": false,
+  "spam_confidence_threshold": 0.8,
+  "review_confidence_threshold": 0.6,
+  "triage_prefix": "Triage",
+  "spam_prefix": "Spam",
+  "review_prefix": "Review",
+  "backup_prefix": "Backup",
+  "openai_api_key": "sk-...",
+  "model_path": "email_triage_zeroinbox_model.joblib",
+  "data_path": "email_labels_zeroinbox.jsonl"
+}
+
+## Training Data Updates
+POST /api/training-data
+# Receives training data updates from manual triage and labeling sessions
+# Should accept JSON payload with training data structure
+
+# Environment Variables (for fallback)
+# Set these if you want to use environment variables instead of Infiscal:
+
+# INFISCAL_URL=https://your-infiscal-server.com
+# INFISCAL_TOKEN=your-token
+
+# Usage Examples:
+# 
+# 1. Configure Infiscal connection:
+#    export INFISCAL_URL="https://infiscal.example.com"
+#    export INFISCAL_TOKEN="your-token"
+#
+# 2. Or use command line arguments:
+#    python email-triage.py --infiscal-url https://infiscal.example.com --infiscal-token YOUR_TOKEN
+#
+# 3. Refresh configuration from Infiscal:
+#    python email-triage.py --refresh-config
+#
+# 4. Check available accounts:
+#    python email-triage.py --list-accounts

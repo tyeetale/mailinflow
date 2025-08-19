@@ -1,42 +1,89 @@
-# mailinflow
-simple free ml based email triage system to get to zero inbox
+# 📧 Mailinflow
 
-free version of this thing: https://www.getinboxzero.com/
+Simple, intelligent email triage system with Infiscal integration.
 
+## 🚀 Quick Start
 
-# Instructions (Need to be Simplier)
-Create Folders in Your Email Client: Before running the script, go into your email client (like Gmail, Fastmail, etc.) and create the folders the script will use. Based on the default config, you would create:
+### 1. Setup Configuration
 
-A main folder called Triage.
+```bash
+cp .env.template .env
+# Edit .env with your Infiscal credentials and email settings
+```
 
-Inside Triage, create the sub-folders:
+### 2. Launch Interface
 
-01_Action_Required
+```bash
+python main.py
+```
 
-02_Travel
+The Streamlit interface will open in your browser at `http://localhost:8501`.
 
-03_Finance
+## 📁 Project Structure
 
-04_Personal
+```
+mailinflow/
+├── main.py                 # 🚀 Simple launcher (just run: python main.py)
+├── streamlit_triage.py     # 🌐 Web interface for manual triage
+├── config_manager.py       # ⚙️ Clean Infiscal SDK integration
+├── email-triage.py         # 📧 Core email processing logic
+├── .env.template           # 🔑 Minimal configuration template
+├── pyproject.toml          # 📦 Dependencies (including infiscal SDK)
+├── README.md               # 📖 Simple getting started guide
+└── instructions/           # 📚 All documentation organized here
+    ├── CLAUDE.md           # Complete project documentation
+    ├── STREAMLIT_README.md # Interface usage guide
+    └── infiscal_config.template # API specification
+```
 
-05_Newsletters
+## ⚙️ Configuration
 
-You will also need an Archive folder at the root level if you don't have one.
+### Minimal .env Setup
 
-Label and Train:
+```bash
+# Infiscal (Primary)
+INFISCAL_URL="https://your-server.com"
+INFISCAL_TOKEN="your-token"
 
-The process is the same, but you now have more categories to choose from. Be thorough. A good dataset is key.
+# Fallback Email
+EMAIL_USER="your-email@example.com"
+EMAIL_PASS="your-password"
+IMAP_SERVER="imap.gmail.com"
+IMAP_PORT=993
 
-python email_triage.py --label
+# Optional
+OPENAI_API_KEY="sk-..."
+```
 
-python email_triage.py --train
+## 🔧 Development
 
-Run and Automate:
+### Install Dependencies
 
-First, test with a dry run: python email_triage.py --run --dry-run
+```bash
+pip install -e .
+```
 
-See how it classifies your current unread emails. It should tell you where everything would go.
+### Run Tests
 
-When ready, unleash it: python email_triage.py --run
+```bash
+python -m pytest
+```
 
-Your inbox will be cleared, and all unread emails will be neatly filed in your new triage folders, ready for your review.
+## 📚 Documentation
+
+See the `instructions/` folder for detailed guides:
+
+- **CLAUDE.md** - Complete project documentation
+- **STREAMLIT_README.md** - Interface usage guide
+- **infiscal_config.template** - API specification
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Submit a pull request
+
+---
+
+**Need Help?** Check the `instructions/` folder for comprehensive documentation.

@@ -31,7 +31,6 @@ from typing import List, Dict, Any, Optional, Iterator, Set, Tuple
 from collections import defaultdict
 from urllib.parse import urlparse, parse_qs
 
-import requests
 from imap_tools import MailBox, AND
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import SGDClassifier
@@ -834,10 +833,6 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # Infiscal Configuration
-  python email_triage.py --infiscal-url https://infiscal.example.com --infiscal-token YOUR_TOKEN
-  python email_triage.py --refresh-config
-  
   # Label emails for a specific account
   python email_triage.py --label --account Primary
   
@@ -877,14 +872,6 @@ Examples:
     parser.add_argument("--account", type=str, 
                        help="Account name to process (required for --label and --run)")
     
-    # Infiscal configuration
-    parser.add_argument("--infiscal-url", type=str,
-                       help="Infiscal server URL (overrides INFISCAL_URL env var)")
-    parser.add_argument("--infiscal-token", type=str,
-                       help="Infiscal authentication token (overrides INFISCAL_TOKEN env var)")
-    parser.add_argument("--refresh-config", action="store_true",
-                       help="Refresh configuration from Infiscal")
-    
     # Processing options
     parser.add_argument("--limit", type=int, default=100, 
                        help="Max number of messages to fetch per account")
@@ -903,23 +890,11 @@ Examples:
     
     args = parser.parse_args()
 
-    # Handle Infiscal configuration
-    if args.infiscal_url or args.infiscal_token:
-        if args.infiscal_url:
-            config_manager.infiscal_manager.infiscal_url = args.infiscal_url
-        if args.infiscal_token:
-            config_manager.infiscal_manager.infiscal_token = args.infiscal_token
-            config_manager.infiscal_manager.session.headers.update({
-                "Authorization": f"Bearer {args.infiscal_token}",
-                "Content-Type": "application/json"
-            })
-        logging.info("Infiscal configuration updated from command line arguments")
-    
     # Handle config refresh
     if args.refresh_config:
         config_manager.refresh_config()
         initialize_configuration()
-        logging.info("Configuration refreshed from Infiscal")
+        logging.info("Configuration refreshed from environment")
         return
 
     # Handle list accounts
@@ -930,7 +905,7 @@ Examples:
             for account in accounts:
                 print(f"  - {account['name']}: {account['email_user']} ({account['imap_server']})")
         else:
-            print("No accounts configured. Please set up accounts in Infiscal or .env file.")
+            print("No accounts configured. Please set up accounts in .env file.")
         return
 
     # Handle run-all mode

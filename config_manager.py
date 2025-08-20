@@ -1,9 +1,8 @@
 #!/usr/bin/env python3
 """
-Simplified Configuration Manager for mailinflow
+Simple Configuration Manager for mailinflow
 
-Uses the Python Infiscal SDK for clean, simple configuration management
-with automatic fallback to environment variables.
+Uses environment variables for clean, simple configuration management.
 """
 
 import os
@@ -42,159 +41,28 @@ class SystemConfig:
     model_path: Path = Path("email_triage_zeroinbox_model.joblib")
     data_path: Path = Path("email_labels_zeroinbox.jsonl")
 
-class InfiscalConfigManager:
-    """Configuration manager using the Python Infiscal SDK."""
-    
-    def __init__(self):
-        self.infiscal_url = os.getenv("INFISCAL_URL")
-        self.infiscal_token = os.getenv("INFISCAL_TOKEN")
-        self.client = None
-        self._initialize_client()
-    
-    def _initialize_client(self):
-        """Initialize the Infiscal client if credentials are available."""
-        if self.infiscal_url and self.infiscal_token:
-            try:
-                import infiscal
-                self.client = infiscal.Client(
-                    base_url=self.infiscal_url,
-                    token=self.infiscal_token
-                )
-                logging.info(f"Infiscal client initialized for {self.infiscal_url}")
-            except ImportError:
-                logging.warning("Infiscal SDK not available, using fallback configuration")
-                self.client = None
-            except Exception as e:
-                logging.error(f"Failed to initialize Infiscal client: {e}")
-                self.client = None
-        else:
-            logging.info("No Infiscal credentials found, using fallback configuration")
-    
-    def is_available(self) -> bool:
-        """Check if Infiscal is available and accessible."""
-        if not self.client:
-            return False
-        
-        try:
-            # Simple health check using the SDK
-            self.client.health.check()
-            return True
-        except Exception as e:
-            logging.warning(f"Infiscal health check failed: {e}")
-            return False
-    
-    def get_email_accounts(self) -> List[EmailAccount]:
-        """Fetch email account configurations from Infiscal."""
-        if not self.is_available():
-            return []
-        
-        try:
-            # Use the SDK to get email accounts
-            accounts_data = self.client.email_accounts.list()
-            accounts = []
-            
-            for account_data in accounts_data:
-                account = EmailAccount(
-                    name=account_data.get("name", "Unknown"),
-                    email_user=account_data.get("email_user"),
-                    email_pass=account_data.get("email_pass"),
-                    imap_server=account_data.get("imap_server", "imap.gmail.com"),
-                    imap_port=int(account_data.get("imap_port", 993))
-                )
-                accounts.append(account)
-            
-            logging.info(f"Retrieved {len(accounts)} email accounts from Infiscal")
-            return accounts
-            
-        except Exception as e:
-            logging.error(f"Error fetching email accounts from Infiscal: {e}")
-            return []
-    
-    def get_system_config(self) -> Optional[SystemConfig]:
-        """Fetch system configuration from Infiscal."""
-        if not self.is_available():
-            return None
-        
-        try:
-            # Use the SDK to get system configuration
-            config_data = self.client.system_config.get()
-            
-            config = SystemConfig(
-                backup_enabled=config_data.get("backup_enabled", True),
-                backup_path=Path(config_data.get("backup_path", "./email_backups")),
-                unsubscribe_enabled=config_data.get("unsubscribe_enabled", True),
-                unsubscribe_aggressive=config_data.get("unsubscribe_aggressive", False),
-                spam_confidence_threshold=float(config_data.get("spam_confidence_threshold", 0.8)),
-                review_confidence_threshold=float(config_data.get("review_confidence_threshold", 0.6)),
-                triage_prefix=config_data.get("triage_prefix", "Triage"),
-                spam_prefix=config_data.get("spam_prefix", "Spam"),
-                review_prefix=config_data.get("review_prefix", "Review"),
-                backup_prefix=config_data.get("backup_prefix", "Backup"),
-                openai_api_key=config_data.get("openai_api_key"),
-                model_path=Path(config_data.get("model_path", "email_triage_zeroinbox_model.joblib")),
-                data_path=Path(config_data.get("data_path", "email_labels_zeroinbox.jsonl"))
-            )
-            
-            logging.info("Retrieved system configuration from Infiscal")
-            return config
-            
-        except Exception as e:
-            logging.error(f"Error fetching system config from Infiscal: {e}")
-            return None
-    
-    def update_training_data(self, training_data: Dict[str, Any]) -> bool:
-        """Send training data updates to Infiscal."""
-        if not self.is_available():
-            return False
-        
-        try:
-            # Use the SDK to update training data
-            self.client.training_data.create(training_data)
-            logging.info("Successfully updated training data in Infiscal")
-            return True
-            
-        except Exception as e:
-            logging.error(f"Error updating training data in Infiscal: {e}")
-            return False
-
 class ConfigurationManager:
-    """Main configuration manager that orchestrates different config sources."""
+    """Simple configuration manager using environment variables."""
     
     def __init__(self):
-        self.infiscal_manager = InfiscalConfigManager()
         self._system_config = None
         self._email_accounts = None
+        logging.info("Configuration manager initialized with environment variables")
     
     def get_email_accounts(self) -> List[EmailAccount]:
-        """Get email accounts, prioritizing Infiscal over environment variables."""
+        """Get email accounts from environment variables."""
         if self._email_accounts is not None:
             return self._email_accounts
         
-        # Try Infiscal first
-        if self.infiscal_manager.is_available():
-            accounts = self.infiscal_manager.get_email_accounts()
-            if accounts:
-                self._email_accounts = accounts
-                return accounts
-        
-        # Fallback to environment variables
         accounts = self._get_accounts_from_env()
         self._email_accounts = accounts
         return accounts
     
     def get_system_config(self) -> SystemConfig:
-        """Get system configuration, prioritizing Infiscal over environment variables."""
+        """Get system configuration from environment variables."""
         if self._system_config is not None:
             return self._system_config
         
-        # Try Infiscal first
-        if self.infiscal_manager.is_available():
-            config = self.infiscal_manager.get_system_config()
-            if config:
-                self._system_config = config
-                return config
-        
-        # Fallback to environment variables
         config = self._get_system_config_from_env()
         self._system_config = config
         return config
@@ -211,47 +79,58 @@ class ConfigurationManager:
         """Extract email accounts from environment variables."""
         accounts = []
         
-        # Check for single account config
-        email_user = os.getenv("EMAIL_USER")
-        if email_user:
-            account = EmailAccount(
-                name="Default",
-                email_user=email_user,
-                email_pass=os.getenv("EMAIL_PASS", ""),
-                imap_server=os.getenv("IMAP_SERVER", "imap.gmail.com"),
-                imap_port=int(os.getenv("IMAP_PORT", 993))
-            )
-            accounts.append(account)
+        # Check for numbered accounts (ACCOUNT_1, ACCOUNT_2, etc.)
+        for i in range(1, 10):
+            prefix = f"ACCOUNT_{i}"
+            email_user = os.getenv(f"{prefix}_EMAIL_USER")
+            if email_user:
+                account = EmailAccount(
+                    name=os.getenv(f"{prefix}_NAME", f"Account{i}"),
+                    email_user=email_user,
+                    email_pass=os.getenv(f"{prefix}_EMAIL_PASS", ""),
+                    imap_server=os.getenv(f"{prefix}_IMAP_SERVER", "imap.gmail.com"),
+                    imap_port=int(os.getenv(f"{prefix}_IMAP_PORT", 993))
+                )
+                accounts.append(account)
+        
+        # Check for single account config if no numbered accounts found
+        if not accounts:
+            email_user = os.getenv("EMAIL_USER")
+            if email_user:
+                account = EmailAccount(
+                    name="Default",
+                    email_user=email_user,
+                    email_pass=os.getenv("EMAIL_PASS", ""),
+                    imap_server=os.getenv("IMAP_SERVER", "imap.gmail.com"),
+                    imap_port=int(os.getenv("IMAP_PORT", 993))
+                )
+                accounts.append(account)
         
         return accounts
     
     def _get_system_config_from_env(self) -> SystemConfig:
         """Extract system configuration from environment variables."""
         return SystemConfig(
-            backup_enabled=True,
-            backup_path=Path("./email_backups"),
-            unsubscribe_enabled=True,
-            unsubscribe_aggressive=False,
-            spam_confidence_threshold=0.8,
-            review_confidence_threshold=0.6,
-            triage_prefix="Triage",
-            spam_prefix="Spam",
-            review_prefix="Review",
-            backup_prefix="Backup",
+            backup_enabled=os.getenv("BACKUP_ENABLED", "true").lower() == "true",
+            backup_path=Path(os.getenv("BACKUP_PATH", "./email_backups")),
+            unsubscribe_enabled=os.getenv("UNSUBSCRIBE_ENABLED", "true").lower() == "true",
+            unsubscribe_aggressive=os.getenv("UNSUBSCRIBE_AGGRESSIVE", "false").lower() == "true",
+            spam_confidence_threshold=float(os.getenv("SPAM_CONFIDENCE_THRESHOLD", "0.8")),
+            review_confidence_threshold=float(os.getenv("REVIEW_CONFIDENCE_THRESHOLD", "0.6")),
+            triage_prefix=os.getenv("TRIAGE_PREFIX", "Triage"),
+            spam_prefix=os.getenv("SPAM_PREFIX", "Spam"),
+            review_prefix=os.getenv("REVIEW_PREFIX", "Review"),
+            backup_prefix=os.getenv("BACKUP_PREFIX", "Backup"),
             openai_api_key=os.getenv("OPENAI_API_KEY"),
-            model_path=Path("email_triage_zeroinbox_model.joblib"),
-            data_path=Path("email_labels_zeroinbox.jsonl")
+            model_path=Path(os.getenv("MODEL_PATH", "email_triage_zeroinbox_model.joblib")),
+            data_path=Path(os.getenv("DATA_PATH", "email_labels_zeroinbox.jsonl"))
         )
     
-    def update_training_data(self, training_data: Dict[str, Any]) -> bool:
-        """Update training data in Infiscal if available."""
-        return self.infiscal_manager.update_training_data(training_data)
-    
     def refresh_config(self):
-        """Refresh configuration from all sources."""
+        """Refresh configuration from environment variables."""
         self._system_config = None
         self._email_accounts = None
-        logging.info("Configuration refreshed")
+        logging.info("Configuration refreshed from environment variables")
 
 # Global configuration manager instance
 config_manager = ConfigurationManager()

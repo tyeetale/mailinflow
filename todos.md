@@ -1,0 +1,4 @@
+- [ ] actually do sweeping triage
+- [ ] better manage accounts
+- [ ] check that prefiltered spam should have been ignored
+- [ ] match to verified mail address and clean out existing emails

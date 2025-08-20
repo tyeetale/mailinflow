@@ -1,6 +1,6 @@
 # 📧 Mailinflow
 
-Simple, intelligent email triage system with Infiscal integration.
+Simple, intelligent email triage system with environment-based configuration.
 
 ## 🚀 Quick Start
 
@@ -8,7 +8,7 @@ Simple, intelligent email triage system with Infiscal integration.
 
 ```bash
 cp .env.template .env
-# Edit .env with your Infiscal credentials and email settings
+# Edit .env with your email account details
 ```
 
 ### 2. Launch Interface
@@ -25,31 +25,34 @@ The Streamlit interface will open in your browser at `http://localhost:8501`.
 mailinflow/
 ├── main.py                 # 🚀 Simple launcher (just run: python main.py)
 ├── streamlit_triage.py     # 🌐 Web interface for manual triage
-├── config_manager.py       # ⚙️ Clean Infiscal SDK integration
+├── config_manager.py       # ⚙️ Simple environment-based configuration
 ├── email-triage.py         # 📧 Core email processing logic
-├── .env.template           # 🔑 Minimal configuration template
-├── pyproject.toml          # 📦 Dependencies (including infiscal SDK)
+├── .env.template           # 🔑 Configuration template
+├── pyproject.toml          # 📦 Dependencies
 ├── README.md               # 📖 Simple getting started guide
 └── instructions/           # 📚 All documentation organized here
-    ├── CLAUDE.md           # Complete project documentation
-    ├── STREAMLIT_README.md # Interface usage guide
-    └── infiscal_config.template # API specification
 ```
 
 ## ⚙️ Configuration
 
-### Minimal .env Setup
+### Simple .env Setup
 
 ```bash
-# Infiscal (Primary)
-INFISCAL_URL="https://your-server.com"
-INFISCAL_TOKEN="your-token"
-
-# Fallback Email
+# Single Account
 EMAIL_USER="your-email@example.com"
 EMAIL_PASS="your-password"
 IMAP_SERVER="imap.gmail.com"
 IMAP_PORT=993
+
+# Multiple Accounts (optional)
+ACCOUNT_1_NAME="Primary"
+ACCOUNT_1_EMAIL_USER="primary@example.com"
+ACCOUNT_1_EMAIL_PASS="primary-password"
+
+# System Settings
+BACKUP_ENABLED=true
+UNSUBSCRIBE_ENABLED=true
+SPAM_CONFIDENCE_THRESHOLD=0.8
 
 # Optional
 OPENAI_API_KEY="sk-..."
@@ -71,11 +74,7 @@ python -m pytest
 
 ## 📚 Documentation
 
-See the `instructions/` folder for detailed guides:
-
-- **CLAUDE.md** - Complete project documentation
-- **STREAMLIT_README.md** - Interface usage guide
-- **infiscal_config.template** - API specification
+See the `instructions/` folder for detailed guides and documentation.
 
 ## 🤝 Contributing
 
